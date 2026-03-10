@@ -17,14 +17,12 @@ resources:
     cpu: 100m
     memory: 128Mi
 ingress:
-  enabled: false
-  className: ""
-  annotations: {}
+  enabled: true
+  className: "nginx" # Убедитесь, что у вас установлен ingress-nginx
   hosts:
-    - host: chart-example.local
+    - host: chat.local # Придумайте домен
       paths:
         - path: /
-          pathType: ImplementationSpecific
-  tls: []
+          pathType: Prefix
 imagePullSecrets:
 - name: gitlab-registry-key
