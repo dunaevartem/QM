@@ -7,7 +7,7 @@ import (
 	"os"
 	"github.com/gin-gonic/gin"
     "github.com/gorilla/websocket"
-	_"github.com/jackc/pgx/v5"
+    _ "github.com/jackc/pgx/v5/stdlib"
 )
 
 var (
