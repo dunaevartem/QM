@@ -1,7 +1,7 @@
 replicaCount: 1
 
 image:
-  repository: ://my-registry.com  # Подставится из пайплайна
+  repository: "repository-will-be-set-in-ci"  # Подставится из пайплайна
   tag: latest
   pullPolicy: Always
 
@@ -26,3 +26,5 @@ ingress:
         - path: /
           pathType: ImplementationSpecific
   tls: []
+imagePullSecrets:
+- name: gitlab-registry-key
