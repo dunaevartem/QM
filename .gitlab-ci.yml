@@ -49,6 +49,7 @@ deploy:
     - >
       helm upgrade --install chat ./charts/chat-app 
       --set image.tag=$CI_COMMIT_SHORT_SHA 
+      --set postgres.password=$POSTGRES_PASSWORD 
       --wait 
       --timeout 300s
   only:
