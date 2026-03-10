@@ -45,7 +45,13 @@ push_image:
 deploy:
   stage: deploy
   image: alpine/helm:latest
+  variables:
+    # Указываем Helm использовать файл, который GitLab заботливо создал из нашей переменной
+    KUBECONFIG: $KUBECONFIG_FILE
   script:
+    - mkdir -p ~/.kube
+    # Если переменная KUBECONFIG_FILE создана как тип "File", 
+    # то Helm увидит её автоматически через переменную окружения KUBECONFIG
     - >
       helm upgrade --install chat ./charts/chat-app 
       --set image.tag=$CI_COMMIT_SHORT_SHA 
