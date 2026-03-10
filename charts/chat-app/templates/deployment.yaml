@@ -14,6 +14,9 @@ spec:
       labels:
         app: {{ .Release.Name }}
     spec:
+          # Добавляем сюда, чтобы K8s знал, какой ключ использовать для скачивания образа
+      imagePullSecrets:
+        - name: gitlab-registry-key
       containers:
         - name: chat-app
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default "latest" }}"
