@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres  # Это имя будет хостом в DATABASE_URL (например, postgres:5432)
+spec:
+  clusterIP: None # Для StatefulSet часто используют Headless-сервис
+  ports:
+    - port: 5432
+      targetPort: 5432
+  selector:
+    app: postgres # Должно совпадать с labels в вашем StatefulSet

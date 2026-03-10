@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+spec:
+  serviceName: "postgres"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15-alpine
+        env:
+        - name: POSTGRES_PASSWORD
+          value: "mypassword"
+        - name: POSTGRES_DB        # Важно: имя базы должно совпадать с тем, что в Go-коде
+          value: "chat_db"
+        ports:
+        - containerPort: 5432
+        volumeMounts:
+        - name: db-data
+          mountPath: /var/lib/postgresql/data
+        # --- НОВОЕ: монтируем скрипт инициализации ---
+        - name: init-scripts
+          mountPath: /docker-entrypoint-initdb.d
+      
+      volumes:
+      # --- НОВОЕ: связываем с ConfigMap ---
+      - name: init-scripts
+        configMap:
+          name: postgres-init-script
+  
+  volumeClaimTemplates:
+  - metadata:
+      name: db-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 1Gi

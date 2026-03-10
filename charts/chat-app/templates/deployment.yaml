@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    app: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.replicaCount | default 1 }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: chat-app
+          # Используем тег из CI/CD пайплайна
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default "latest" }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy | default "Always" }}
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          env:
+            # Строка подключения к PostgreSQL (используем имя сервиса 'postgres')
+            - name: DATABASE_URL
+              value: "postgres://postgres:mypassword@postgres:5432/chat_db?sslmode=disable"
+          # Проверка работоспособности (Liveness/Readiness)
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}

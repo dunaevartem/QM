@@ -1,0 +1,55 @@
+stages:
+  - build
+  - test    # Добавили стадию
+  - push
+  - deploy
+
+variables:
+  IMAGE_TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA
+  GOPATH: $CI_PROJECT_DIR/.go
+
+cache:
+  key: ${CI_COMMIT_REF_SLUG}
+  paths:
+    - .go/pkg/mod/
+
+build_app:
+  stage: build
+  image: golang:1.24-alpine
+  script:
+    - go build -o chat-server ./cmd/main.go
+  artifacts:
+    paths:
+      - chat-server
+
+# --- НОВАЯ ЗАДАЧА ---
+run_tests:
+  stage: test
+  image: golang:1.24-alpine
+  script:
+    # Запускаем все тесты из папки /test
+    - go test -v ./test/...
+  dependencies:
+    - build_app
+
+push_image:
+  stage: push
+  image:
+    name: gcr.io/kaniko-project/executor:debug
+    entrypoint: [""]
+  script:
+    - mkdir -p /kaniko/.docker
+    - echo "{\"auths\":{\"$CI_REGISTRY\":{\"auth\":\"$(printf "%s:%s" "$CI_REGISTRY_USER" "$CI_REGISTRY_PASSWORD" | base64 | tr -d '\n')\"}}}" > /kaniko/.docker/config.json
+    - /kaniko/executor --context "${CI_PROJECT_DIR}" --dockerfile "${CI_PROJECT_DIR}/Dockerfile" --destination "${IMAGE_TAG}"
+
+deploy:
+  stage: deploy
+  image: alpine/helm:latest
+  script:
+    - >
+      helm upgrade --install chat ./charts/chat-app 
+      --set image.tag=$CI_COMMIT_SHORT_SHA 
+      --wait 
+      --timeout 300s
+  only:
+    - master
