@@ -18,8 +18,11 @@ spec:
         image: postgres:15-alpine
         env:
         - name: POSTGRES_PASSWORD
-          value: "mypassword"
-        - name: POSTGRES_DB        # Важно: имя базы должно совпадать с тем, что в Go-коде
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret  # Имя секрета, который мы создадим
+              key: password         # Ключ внутри секрета
+        - name: POSTGRES_DB
           value: "chat_db"
         ports:
         - containerPort: 5432

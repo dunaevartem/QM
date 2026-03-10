@@ -16,22 +16,35 @@ spec:
     spec:
       containers:
         - name: chat-app
-          # Используем тег из CI/CD пайплайна
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default "latest" }}"
           imagePullPolicy: {{ .Values.image.pullPolicy | default "Always" }}
           ports:
             - containerPort: 8080
-              protocol: TCP
           env:
-            # Строка подключения к PostgreSQL (используем имя сервиса 'postgres')
+            # 1. Берем пароль из секрета (тот же, что у Postgres)
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: password
+            
+            # 2. Собираем полную строку подключения (DATABASE_URL)
+            # Используем имя сервиса 'postgres' как хост
             - name: DATABASE_URL
-              value: "postgres://postgres:mypassword@postgres:5432/chat_db?sslmode=disable"
-          # Проверка работоспособности (Liveness/Readiness)
+              value: "postgres://postgres:$(DB_PASSWORD)@postgres:5432/chat_db?sslmode=disable"
+          
+          # Проверка, что приложение живое
           livenessProbe:
             httpGet:
               path: /
               port: 8080
-            initialDelaySeconds: 5
-            periodSeconds: 10
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
+            limits:
+              cpu: 200m
+              memory: 256Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
