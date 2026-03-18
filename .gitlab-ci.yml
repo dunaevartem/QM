@@ -44,20 +44,37 @@ push_image:
 
 deploy:
   stage: deploy
-  image: alpine/helm:latest
+  image: 
+    name: alpine/k8s:1.29.2 # Этот образ содержит и helm, и kubectl
+    entrypoint: [""]
   variables:
-    # Указываем Helm использовать файл, который GitLab заботливо создал из нашей переменной
     KUBECONFIG: $KUBECONFIG_FILE
   script:
-    - mkdir -p ~/.kube
-    # Если переменная KUBECONFIG_FILE создана как тип "File", 
-    # то Helm увидит её автоматически через переменную окружения KUBECONFIG
+    # 1. Создаем namespace заранее (kubectl create namespace --dry-run=client -o yaml | kubectl apply -f -)
+    - kubectl create namespace chat-app --dry-run=client -o yaml | kubectl apply -f -
+
+    # 2. Создаем секрет для скачивания образов из GitLab Registry
+    - >
+      kubectl create secret docker-registry gitlab-registry-key
+      --namespace chat-app
+      --docker-server=$CI_REGISTRY
+      --docker-username=$CI_DEPLOY_USER
+      --docker-password=$CI_DEPLOY_PASSWORD
+      --dry-run=client -o yaml | kubectl apply -f -
+
+    # 3. Создаем секрет для пароля базы данных (чтобы Deployment мог его прочитать)
+    - >
+      kubectl create secret generic postgres-secret
+      --namespace chat-app
+      --from-literal=password=$POSTGRES_PASSWORD
+      --dry-run=client -o yaml | kubectl apply -f -
+
+    # 4. Ваш привычный деплой через Helm
     - >
       helm upgrade --install chat ./charts/chat-app 
-      --namespace chat-app --create-namespace 
+      --namespace chat-app
       --set image.repository=$CI_REGISTRY_IMAGE    
       --set image.tag=$CI_COMMIT_SHORT_SHA 
-      --set postgres.password=$POSTGRES_PASSWORD 
       --wait 
       --timeout 300s
   only:
