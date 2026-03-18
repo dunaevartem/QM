@@ -7,7 +7,7 @@
     <style>
         body { font-family: sans-serif; background: #f4f7f6; display: flex; flex-direction: column; height: 100vh; margin: 0; }
         #chat { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
-        .msg { background: white; padding: 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); max-width: 70%; }
+        .msg { background: white; padding: 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); max-width: 70%; align-self: flex-start; }
         .msg b { color: #007bff; display: block; margin-bottom: 4px; }
         .controls { background: white; padding: 20px; display: flex; gap: 10px; border-top: 1px solid #ddd; }
         input { padding: 10px; border: 1px solid #ddd; border-radius: 4px; outline: none; }
@@ -28,25 +28,43 @@
     </div>
 
     <script>
-        // Автоматически определяем адрес WebSocket на основе текущего URL (важно для Ingress)
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const socket = new WebSocket(`${protocol}//${window.location.host}/ws`);
-
         const chat = document.getElementById('chat');
         const messageInput = document.getElementById('message');
         const usernameInput = document.getElementById('username');
 
-        // Получение сообщений
-        socket.onmessage = function(event) {
-            const data = JSON.parse(event.data);
+        // Функция отрисовки сообщения в UI
+        function renderMessage(data) {
             const msgDiv = document.createElement('div');
             msgDiv.className = 'msg';
             msgDiv.innerHTML = `<b>${data.username}</b> ${data.content}`;
             chat.appendChild(msgDiv);
-            chat.scrollTop = chat.scrollHeight; // Скролл вниз
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+        // 1. Сначала загружаем историю из БД
+        async function loadHistory() {
+            try {
+                const res = await fetch('/history');
+                const history = await res.json();
+                if (Array.isArray(history)) {
+                    history.forEach(renderMessage);
+                }
+            } catch (err) {
+                console.error("Ошибка загрузки истории:", err);
+            }
+        }
+
+        loadHistory();
+
+        // 2. Настраиваем WebSocket для новых сообщений
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const socket = new WebSocket(`${protocol}//${window.location.host}/ws`);
+
+        socket.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            renderMessage(data);
         };
 
-        // Отправка сообщений
         function sendMessage() {
             if (messageInput.value.trim() === "") return;
             
@@ -58,7 +76,6 @@
             messageInput.value = "";
         }
 
-        // Отправка по Enter
         messageInput.addEventListener("keypress", (e) => {
             if (e.key === "Enter") sendMessage();
         });
