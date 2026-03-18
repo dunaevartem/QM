@@ -4,4 +4,10 @@ metadata:
   name: postgres-init-script
 data:
   init.sql: |
-    {{ .Files.Get "migrations/init.sql" }}
+    CREATE TABLE IF NOT EXISTS messages (
+        id SERIAL PRIMARY KEY,
+        username VARCHAR(50) NOT NULL,
+        content TEXT NOT NULL,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    );
+    INSERT INTO messages (username, content) VALUES ('System', 'Чат запущен в новом неймспейсе!');
