@@ -9,6 +9,9 @@ service:
   type: ClusterIP
   port: 80
 
+postgres:
+  password: ""
+
 resources:
   limits:
     cpu: 200m
