@@ -47,7 +47,7 @@ deploy-crd:
   stage: pre-deploy
   image: line/kubectl-kustomize:latest # Легкий образ с kubectl
   script:
-    - kubectl apply -f deploy/crds/my-crd.yaml
+    - kubectl apply -f deploy/crds/crd.yaml
 
 deploy:
   stage: deploy
