@@ -10,7 +10,8 @@ service:
   port: 80
 
 postgres:
-  password: ""
+  password: "vault-managed" # Это просто заглушка
+  secretName: "postgres-secret" # Имя, которое создаст ExternalSecrets
 
 resources:
   limits:
@@ -21,9 +22,9 @@ resources:
     memory: 128Mi
 ingress:
   enabled: true
-  className: "nginx" # Убедитесь, что у вас установлен ingress-nginx
+  className: "nginx" # Должен быть установлен ingress-nginx
   hosts:
-    - host: chat.local # Придумайте домен
+    - host: chat.local # Придумываем домен
       paths:
         - path: /
           pathType: Prefix
