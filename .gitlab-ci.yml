@@ -1,7 +1,8 @@
 stages:
   - build
-  - test    # Добавили стадию
+  - test   
   - push
+  - pre-deploy
   - deploy
 
 variables:
@@ -41,6 +42,12 @@ push_image:
     - mkdir -p /kaniko/.docker
     - echo "{\"auths\":{\"$CI_REGISTRY\":{\"auth\":\"$(printf "%s:%s" "$CI_REGISTRY_USER" "$CI_REGISTRY_PASSWORD" | base64 | tr -d '\n')\"}}}" > /kaniko/.docker/config.json
     - /kaniko/executor --context "${CI_PROJECT_DIR}" --dockerfile "${CI_PROJECT_DIR}/Dockerfile" --destination "${IMAGE_TAG}"
+
+deploy-crd:
+  stage: pre-deploy
+  image: line/kubectl-kustomize:latest # Легкий образ с kubectl
+  script:
+    - kubectl apply -f deploy/crds/my-crd.yaml
 
 deploy:
   stage: deploy
