@@ -1,93 +1,56 @@
-# Go Calculator (K8s Project)
-
-Веб-приложение для вычислений, написанное на Go, развернутое в Kubernetes-кластере с использованием современного стека автоматизации.
-
-# Стек технологий
-
-* Backend: Go 1.24 (Framework Gin Gonic)
-* Runtime: containerd + nerdctl (без использования Docker Docker Engine)
-* Orchestration: Kubernetes v1.35.1
-* Deployment: Helm 3
-* CI/CD: GitLab CI + Kaniko (rootless image build)
-
-# Архитектура и трафик
-
-Проект демонстрирует полный путь запроса от клиента до контейнера в изолированной сети.
-
-```mermaid
-graph TD
-    User((Пользователь)) -->|1. http://kurtonic.local| Hosts[Файл /etc/hosts]
-    Hosts -->|2. IP: 192.168.1.50| IngressSVC[Ingress Controller]
-    IngressSVC -->|3. Host: kurtonic.local| IngressRule[Ingress Resource]
-    IngressRule -->|4. Backend Routing| GoService[Service: go-app-service]
-    GoService -->|5. Load Balancing| Pod1[Pod: replica-1]
-    GoService -->|5. Load Balancing| Pod2[Pod: replica-2]
-
-    subgraph "K8s Cluster"
-        IngressRule
-        GoService
-        Pod1
-        Pod2
-    end
+# Go-K8s-Chat
+Современный масштабируемый чат на WebSockets с использованием Golang, Kubernetes и безопасным управлением секретами через HashiCorp Vault.
+# Архитектура
+Backend: Go (Gin Framework + Gorilla WebSocket).
+Frontend: Статический HTML/JS (встроен в образ).
+Database: PostgreSQL 15 (StatefulSet с PersistentVolume).
+Secrets: HashiCorp Vault + External Secrets Operator.
+CI/CD: GitLab CI (Kaniko для сборки, Helm для деплоя).
+# Технологический стек
+Runtime: golang:1.24-alpine
+Orchestration: Kubernetes 1.29+
+Package Manager: Helm 3
+Ingress: NGINX Ingress Controller (доступ по chat.local)
+# Управление секретами (Vault)
+В проекте реализован принцип Zero Secrets in Git. Все чувствительные данные (пароли БД, ключи реестра) хранятся в Vault и доставляются в кластер через ExternalSecrets.
+Настройка Vault
+Путь к секрету базы: secret/chat-app (поле password).
+Путь к секрету реестра: secret/registry (поля user, password).
+Роль в Vault: chat-app-role (привязана к ServiceAccount default).
+# CI/CD Пайплайн
+Автоматизация описана в .gitlab-ci.yml и включает 5 стадий:
+Build: Компиляция бинарного файла chat-server.
+Test: Запуск unit-тестов из директории /test.
+Push: Сборка Docker-образа через Kaniko (без привилегий root) и пуш в GitLab Registry.
+Pre-deploy: Подготовка окружения.
+Deploy: Деплой приложения в Kubernetes через Helm.
+# Развертывание (Helm)
+Предварительные требования
+Установленный ingress-nginx.
+Настроенный External Secrets Operator.
+Прописанный IP кластера в /etc/hosts:
 ```
-
-# CI/CD Pipeline
-
-__Автоматизация реализована через .gitlab-ci.yaml и включает 4 стадии:__
-* Build: Сборка Go-бинарника (артефакт app).
-* Test: Запуск модульных тестов (go test ./...).
-* Push: Сборка Docker-образа через Kaniko. Это позволяет собирать образы внутри K8s без привилегированного доступа и Docker-in-Docker.
-* Deploy: Деплой в кластер через Helm. Тег образа автоматически обновляется на основе короткого SHA коммита.
-
-# Установка и запуск
-
-Локально (Development)
+<node-ip> chat.local
 ```
-go run main.go
+Установка чарта
 ```
-
-Приложение будет доступно на http://localhost:8080.
-
-В кластере (Production-ready)
-
-# Настройка containerd:
-
-Убедитесь, что в /etc/containerd/config.toml прописан config_path для работы с вашим реестром по HTTP/HTTPS.
-
-# Деплой через Helm:
-
+helm upgrade --install chat ./charts/chat-app \
+  --namespace chat-app \
+  --create-namespace \
+  --set image.tag=latest \
+  --set registry.url=$CI_REGISTRY
 ```
-helm upgrade --install go-app ./charts/go-app \
-  --set image.repository=$CI_REGISTRY_IMAGE \
-  --set image.tag=latest
+# Конфигурация (Values.yaml)
+Параметр	Описание	Значение по умолчанию
+replicaCount	Количество подов приложения	1
+service.port	Внутренний порт сервиса	80
+ingress.host	Домен для доступа к чату	chat.local
+postgres.secretName	Имя создаваемого секрета для БД	postgres-secret
+# Разработка
+Для локального запуска (требуется установленный Postgres):
 ```
-
-# Доступ:
-
-Добавьте запись в /etc/hosts:
-
-192.168.1.50 kurtonic.local
-
-
-# Структура репозитория
-
-* __main.go__ — Серверная логика и API (Gin).
-* __templates/__ — UI шаблоны (index, result, error).
-* __charts/go-app/__ — Helm-чарт (Deployment на 2 реплики, ClusterIP Service, Ingress).
-* __Dockerfile__ — Легковесный образ на базе Alpine.
-* __test/__ — Модульные тесты приложения.
-* __myapp.service__ — (Legacy) Конфиг для запуска через systemd.
-
-# Мониторинг и отладка
-
-__Посмотреть логи всех реплик сразу:__
+export DATABASE_URL="postgres://user:pass@localhost:5432/chat_db"
+go run ./cmd/main.go
 ```
-kubectl logs -l app.kubernetes.io/name=go-app -f
-```
-
-__Проверить статус здоровья:__
-```
-curl http://kurtonic.local
-
-```
+Приложение будет доступно на порту :8080.
 
