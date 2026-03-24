@@ -1,19 +1,17 @@
 ```mermaid
 graph TD
-    subgraph Cluster ["Kubernetes Cluster (Nodes: dev, runner, osnova)"]
+    subgraph Cluster ["Kubernetes Cluster"]
         
         subgraph Node_DEV ["Node: dev"]
-            subgraph OS_DEV ["Host OS Level"]
+            subgraph OS_DEV ["Host OS"]
                 GitLab[GitLab Service]
                 Registry((GitLab Registry))
             end
-            K8s_Runtime_D[K8s Node Components]
+            R_Pod1[GitLab Runner Pod]
         end
 
         subgraph Node_RUNNER ["Node: runner"]
-            subgraph R_NS ["Namespace: gitlab-runner"]
-                Runner[GitLab Runner Pod]
-            end
+            R_Pod2[GitLab Runner Pod]
             Ingress[NGINX Ingress Controller]
         end
 
@@ -23,6 +21,7 @@ graph TD
                 ESO[External Secrets Operator]
                 K8sSecret[K8s Secret]
             end
+            R_Pod3[GitLab Runner Pod]
             DB[(Postgres 15)]
         end
         
@@ -32,17 +31,19 @@ graph TD
         Vault[(HashiCorp Vault)]
     end
 
-    %% Трафик пользователя
+    %% Трафик и связи
     User((User)) -->|chat.local| Ingress
     Ingress -->|Route| Pods
+    
+    %% CI/CD Потоки (теперь от любого пода-раннера)
+    GitLab <-->|Jobs / API| R_Pod1
+    GitLab <-->|Jobs / API| R_Pod2
+    GitLab <-->|Jobs / API| R_Pod3
 
-    %% CI/CD Потоки (Runner внутри K8s -> GitLab на хосте)
-    GitLab <-->|Jobs / API| Runner
-    Runner -->|1. Build & Test| Runner
-    Runner -->|2. Kaniko Push| Registry
-    Runner -->|3. Helm Deploy| AppNS
+    R_Pod1 & R_Pod2 & R_Pod3 -->|Push Image| Registry
+    R_Pod1 & R_Pod2 & R_Pod3 -->|Helm Deploy| AppNS
 
-    %% Работа с секретами и данными
+    %% Секреты
     Vault -->|Provide Secrets| ESO
     ESO -.->|Sync| K8sSecret
     K8sSecret -.->|Inject ENV| Pods
@@ -51,7 +52,9 @@ graph TD
     %% Стилизация
     style OS_DEV fill:#fff,stroke:#fc6d26,stroke-width:2px
     style GitLab fill:#fc6d26,color:#fff
-    style Runner fill:#fca326,color:#fff
+    style R_Pod1 fill:#fca326,color:#fff
+    style R_Pod2 fill:#fca326,color:#fff
+    style R_Pod3 fill:#fca326,color:#fff
     style Ingress fill:#00a6ed,color:#fff
     style Vault fill:#f5d142,stroke:#333
     style Pods fill:#61dafb,stroke:#333
