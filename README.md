@@ -1,5 +1,4 @@
-mermaid
-```
+```mermaid
 graph TD
     subgraph "External Access"
         User((User)) --> Ingress[NGINX Ingress: chat.local]
