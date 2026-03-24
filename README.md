@@ -1,19 +1,23 @@
 ```mermaid
 graph TD
-    subgraph Server_DEV ["Standalone Server: DEV"]
-        GitLab[GitLab Service]
-        Registry((GitLab Registry))
-    end
+    subgraph Cluster ["Kubernetes Cluster (Nodes: dev, runner, osnova)"]
+        
+        subgraph Node_DEV ["Node: dev"]
+            subgraph OS_DEV ["Host OS Level"]
+                GitLab[GitLab Service]
+                Registry((GitLab Registry))
+            end
+            K8s_Runtime_D[K8s Node Components]
+        end
 
-    subgraph K8s_Cluster ["Kubernetes Cluster"]
-        subgraph Node_RUNNER ["Node: RUNNER"]
+        subgraph Node_RUNNER ["Node: runner"]
             subgraph R_NS ["Namespace: gitlab-runner"]
                 Runner[GitLab Runner Pod]
             end
             Ingress[NGINX Ingress Controller]
         end
 
-        subgraph Node_OSNOVA ["Node: OSNOVA"]
+        subgraph Node_OSNOVA ["Node: osnova"]
             subgraph AppNS ["Namespace: chat-app"]
                 Pods[Go-Chat Pods]
                 ESO[External Secrets Operator]
@@ -21,17 +25,18 @@ graph TD
             end
             DB[(Postgres 15)]
         end
+        
     end
 
-    subgraph Security ["Security"]
+    subgraph External ["Security"]
         Vault[(HashiCorp Vault)]
     end
 
     %% Трафик пользователя
     User((User)) -->|chat.local| Ingress
-    Ingress -->|Forward| Pods
+    Ingress -->|Route| Pods
 
-    %% CI/CD Потоки (Вне -> Внутри)
+    %% CI/CD Потоки (Runner внутри K8s -> GitLab на хосте)
     GitLab <-->|Jobs / API| Runner
     Runner -->|1. Build & Test| Runner
     Runner -->|2. Kaniko Push| Registry
@@ -44,13 +49,15 @@ graph TD
     Pods --> DB
 
     %% Стилизация
-    style Server_DEV fill:#f1f1f1,stroke:#fc6d26,stroke-width:2px
-    style K8s_Cluster fill:#f8f9ff,stroke:#326ce5,stroke-width:2px
+    style OS_DEV fill:#fff,stroke:#fc6d26,stroke-width:2px
     style GitLab fill:#fc6d26,color:#fff
     style Runner fill:#fca326,color:#fff
     style Ingress fill:#00a6ed,color:#fff
     style Vault fill:#f5d142,stroke:#333
     style Pods fill:#61dafb,stroke:#333
+    style Node_DEV fill:#f9f9f9,stroke:#333,stroke-dasharray: 5 5
+    style Node_RUNNER fill:#f9f9f9,stroke:#333,stroke-dasharray: 5 5
+    style Node_OSNOVA fill:#f9f9f9,stroke:#333,stroke-dasharray: 5 5
 ```
 # Go-K8s-Chat
 Современный масштабируемый чат на WebSockets с использованием Golang, Kubernetes и безопасным управлением секретами через HashiCorp Vault.
