@@ -3,15 +3,19 @@ graph TD
     subgraph Cluster ["Kubernetes Cluster"]
         
         subgraph Node_DEV ["Node: dev"]
-            subgraph OS_DEV ["Host OS"]
+            subgraph OS_DEV ["Host OS Level"]
                 GitLab[GitLab Service]
                 Registry((GitLab Registry))
             end
-            R_Pod1[GitLab Runner Pod]
+            subgraph R_NS1 ["Namespace: gitlab-runner"]
+                R_Pod1[Runner Pod A]
+            end
         end
 
         subgraph Node_RUNNER ["Node: runner"]
-            R_Pod2[GitLab Runner Pod]
+            subgraph R_NS2 ["Namespace: gitlab-runner"]
+                R_Pod2[Runner Pod B]
+            end
             Ingress[NGINX Ingress Controller]
         end
 
@@ -21,7 +25,9 @@ graph TD
                 ESO[External Secrets Operator]
                 K8sSecret[K8s Secret]
             end
-            R_Pod3[GitLab Runner Pod]
+            subgraph R_NS3 ["Namespace: gitlab-runner"]
+                R_Pod3[Runner Pod C]
+            end
             DB[(Postgres 15)]
         end
         
@@ -35,13 +41,13 @@ graph TD
     User((User)) -->|chat.local| Ingress
     Ingress -->|Route| Pods
     
-    %% CI/CD Потоки (теперь от любого пода-раннера)
+    %% CI/CD Потоки
     GitLab <-->|Jobs / API| R_Pod1
     GitLab <-->|Jobs / API| R_Pod2
     GitLab <-->|Jobs / API| R_Pod3
 
-    R_Pod1 & R_Pod2 & R_Pod3 -->|Push Image| Registry
-    R_Pod1 & R_Pod2 & R_Pod3 -->|Helm Deploy| AppNS
+    R_Pod1 & R_Pod2 & R_Pod3 -->|1. Build & Push| Registry
+    R_Pod1 & R_Pod2 & R_Pod3 -->|2. Helm Deploy| AppNS
 
     %% Секреты
     Vault -->|Provide Secrets| ESO
@@ -61,6 +67,9 @@ graph TD
     style Node_DEV fill:#f9f9f9,stroke:#333,stroke-dasharray: 5 5
     style Node_RUNNER fill:#f9f9f9,stroke:#333,stroke-dasharray: 5 5
     style Node_OSNOVA fill:#f9f9f9,stroke:#333,stroke-dasharray: 5 5
+    style R_NS1 fill:#fff9f0,stroke:#fca326,stroke-dasharray: 3 3
+    style R_NS2 fill:#fff9f0,stroke:#fca326,stroke-dasharray: 3 3
+    style R_NS3 fill:#fff9f0,stroke:#fca326,stroke-dasharray: 3 3
 ```
 # Go-K8s-Chat
 Современный масштабируемый чат на WebSockets с использованием Golang, Kubernetes и безопасным управлением секретами через HashiCorp Vault.
