@@ -1,50 +1,61 @@
 ```mermaid
 graph TD
-    subgraph "Infrastructure: 3-Node K8s Cluster"
-        subgraph Node1 ["Node 1 (Control Plane/Worker)"]
-             Runner[GitLab Runner Pod]
+    subgraph "Public Internet"
+        User((User)) -->|chat.local| Ingress[NGINX Ingress Controller]
+    end
+
+    subgraph "Kubernetes Cluster (3 Nodes)"
+        subgraph Node1 ["Node 1 (System)"]
+            Runner[GitLab Runner Pod]
+            Ingress
         end
-        
-        subgraph Node2 ["Node 2 (Worker)"]
+
+        subgraph Node2 ["Node 2 (Apps)"]
             subgraph AppNS ["Namespace: chat-app"]
                 Pods[Go-Chat Pods]
                 ESO[External Secrets Operator]
+                K8sSecret[K8s Secret]
             end
         end
-        
-        subgraph Node3 ["Node 3 (Worker)"]
-            DB[(PostgreSQL 15)]
+
+        subgraph Node3 ["Node 3 (Data)"]
+            DB[(Postgres 15)]
             PV[Persistent Volume]
         end
     end
 
-    subgraph "GitLab SaaS / Self-managed"
-        GitRepo[Git Repository]
+    subgraph "External Security & CI/CD"
+        Vault[(HashiCorp Vault)]
+        GitLab[GitLab Project]
         Registry((GitLab Registry))
     end
 
-    subgraph "Security"
-        Vault[(HashiCorp Vault)]
-    end
+    %% Трафик пользователя
+    Ingress -->|Route to Port 80| Pods
 
-    %% Workflow Connections
-    GitRepo <-->|Polls / Webhook| Runner
+    %% CI/CD Потоки
+    GitLab <-->|Jobs| Runner
     Runner -->|1. Build & Test| Runner
     Runner -->|2. Kaniko Push| Registry
     Runner -->|3. Helm Deploy| AppNS
-    
-    Vault -->|Provide Secrets| ESO
-    ESO -.->|Creates K8s Secret| Pods
-    Pods --> DB
-    
-    User((User)) -->|chat.local| Node2
 
-    %% Styling
-    style Runner fill:#fca326,stroke:#333,stroke-width:2px,color:#fff
-    style Node1 fill:#f8f9fa,stroke:#999,stroke-dasharray: 5 5
-    style Node2 fill:#f8f9fa,stroke:#999,stroke-dasharray: 5 5
-    style Node3 fill:#f8f9fa,stroke:#999,stroke-dasharray: 5 5
+    %% Работа с секретами
+    Vault -->|secret/chat-app| ESO
+    ESO -.->|Sync| K8sSecret
+    K8sSecret -.->|Inject ENV| Pods
+
+    %% Данные
+    Pods --> DB
+    DB --- PV
+
+    %% Стилизация
+    style Ingress fill:#00a6ed,color:#fff,stroke:#333
+    style Runner fill:#fca326,color:#fff,stroke:#333
     style Vault fill:#f5d142,stroke:#333
+    style Pods fill:#61dafb,stroke:#333
+    style Node1 fill:#fafafa,stroke:#999,stroke-dasharray: 5 5
+    style Node2 fill:#fafafa,stroke:#999,stroke-dasharray: 5 5
+    style Node3 fill:#fafafa,stroke:#999,stroke-dasharray: 5 5
 ```
 # Go-K8s-Chat
 Современный масштабируемый чат на WebSockets с использованием Golang, Kubernetes и безопасным управлением секретами через HashiCorp Vault.
