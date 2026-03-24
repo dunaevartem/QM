@@ -1,61 +1,60 @@
 ```mermaid
 graph TD
-    subgraph "Public Internet"
-        User((User)) -->|chat.local| Ingress[NGINX Ingress Controller]
-    end
-
-    subgraph "Kubernetes Cluster (3 Nodes)"
-        subgraph Node1 ["Node 1 (System)"]
-            Runner[GitLab Runner Pod]
-            Ingress
+    subgraph Cluster ["Kubernetes Cluster (3 Nodes)"]
+        
+        subgraph DEV ["Node: dev"]
+            GL_Svc[GitLab Service]
+            Registry((GitLab Registry))
+            GL_Svc --- Registry
         end
 
-        subgraph Node2 ["Node 2 (Apps)"]
+        subgraph RUNNER_SRV ["Node: runner"]
+            subgraph R_NS ["Namespace: gitlab-runner"]
+                Runner[GitLab Runner Pod]
+            end
+            Ingress[NGINX Ingress Controller]
+        end
+
+        subgraph OSNOVA ["Node: osnova"]
             subgraph AppNS ["Namespace: chat-app"]
                 Pods[Go-Chat Pods]
                 ESO[External Secrets Operator]
                 K8sSecret[K8s Secret]
             end
-        end
-
-        subgraph Node3 ["Node 3 (Data)"]
             DB[(Postgres 15)]
-            PV[Persistent Volume]
         end
+        
     end
 
-    subgraph "External Security & CI/CD"
+    subgraph External ["Security"]
         Vault[(HashiCorp Vault)]
-        GitLab[GitLab Project]
-        Registry((GitLab Registry))
     end
 
     %% Трафик пользователя
-    Ingress -->|Route to Port 80| Pods
+    User((User)) -->|chat.local| Ingress
+    Ingress -->|Route| Pods
 
-    %% CI/CD Потоки
-    GitLab <-->|Jobs| Runner
+    %% CI/CD Потоки внутри кластера
+    GL_Svc <-->|Jobs| Runner
     Runner -->|1. Build & Test| Runner
     Runner -->|2. Kaniko Push| Registry
     Runner -->|3. Helm Deploy| AppNS
 
-    %% Работа с секретами
-    Vault -->|secret/chat-app| ESO
+    %% Секреты и Данные
+    Vault -->|Provide Secrets| ESO
     ESO -.->|Sync| K8sSecret
     K8sSecret -.->|Inject ENV| Pods
-
-    %% Данные
     Pods --> DB
-    DB --- PV
 
     %% Стилизация
-    style Ingress fill:#00a6ed,color:#fff,stroke:#333
-    style Runner fill:#fca326,color:#fff,stroke:#333
+    style DEV fill:#f9f9f9,stroke:#333,stroke-dasharray: 5 5
+    style RUNNER_SRV fill:#f9f9f9,stroke:#333,stroke-dasharray: 5 5
+    style OSNOVA fill:#f9f9f9,stroke:#333,stroke-dasharray: 5 5
+    style GL_Svc fill:#fc6d26,color:#fff
+    style Runner fill:#fca326,color:#fff
+    style Ingress fill:#00a6ed,color:#fff
     style Vault fill:#f5d142,stroke:#333
     style Pods fill:#61dafb,stroke:#333
-    style Node1 fill:#fafafa,stroke:#999,stroke-dasharray: 5 5
-    style Node2 fill:#fafafa,stroke:#999,stroke-dasharray: 5 5
-    style Node3 fill:#fafafa,stroke:#999,stroke-dasharray: 5 5
 ```
 # Go-K8s-Chat
 Современный масштабируемый чат на WebSockets с использованием Golang, Kubernetes и безопасным управлением секретами через HashiCorp Vault.
