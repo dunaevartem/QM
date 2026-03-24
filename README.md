@@ -2,11 +2,21 @@
 graph TD
     subgraph Cluster ["Kubernetes Cluster"]
         
-        %% Определяем неймспейс, который объединяет поды на разных нодах
-        subgraph R_NS ["Namespace: gitlab-runner (Distributed)"]
-            R_Pod1[Runner Pod A]
-            R_Pod2[Runner Pod B]
-            R_Pod3[Runner Pod C]
+        %% Общий неймспейс, проходящий через все ноды
+        subgraph R_NS ["Namespace: gitlab-runner"]
+            direction TB
+            subgraph R_DEV [" "]
+                R1_1[Runner Pod 1]
+                R1_2[Runner Pod 2]
+            end
+            subgraph R_RUN [" "]
+                R2_1[Runner Pod 3]
+                R2_2[Runner Pod 4]
+            end
+            subgraph R_OSN [" "]
+                R3_1[Runner Pod 5]
+                R3_2[Runner Pod 6]
+            end
         end
 
         subgraph Node_DEV ["Node: dev"]
@@ -14,11 +24,11 @@ graph TD
                 GitLab[GitLab Service]
                 Registry((GitLab Registry))
             end
-            R_Pod1
+            R_DEV
         end
 
         subgraph Node_RUNNER ["Node: runner"]
-            R_Pod2
+            R_RUN
             Ingress[NGINX Ingress Controller]
         end
 
@@ -28,7 +38,7 @@ graph TD
                 ESO[External Secrets Operator]
                 K8sSecret[K8s Secret]
             end
-            R_Pod3
+            R_OSN
             DB[(Postgres 15)]
         end
         
@@ -43,8 +53,8 @@ graph TD
     Ingress -->|Route| Pods
     
     GitLab <-->|Jobs / API| R_NS
-    R_NS -->|1. Build & Push| Registry
-    R_NS -->|2. Helm Deploy| AppNS
+    R_NS -->|Push Image| Registry
+    R_NS -->|Deploy| AppNS
 
     Vault -->|Provide Secrets| ESO
     ESO -.->|Sync| K8sSecret
@@ -54,16 +64,19 @@ graph TD
     %% Стилизация
     style OS_DEV fill:#fff,stroke:#fc6d26,stroke-width:2px
     style GitLab fill:#fc6d26,color:#fff
-    style R_NS fill:#fff9f0,stroke:#fca326,stroke-width:2px,stroke-dasharray: 8 4
-    style R_Pod1 fill:#fca326,color:#fff
-    style R_Pod2 fill:#fca326,color:#fff
-    style R_Pod3 fill:#fca326,color:#fff
+    style R_NS fill:#fff,stroke:#fca326,stroke-width:3px,stroke-dasharray: 10 5
+    style R1_1 fill:#fca326,color:#fff; style R1_2 fill:#fca326,color:#fff
+    style R2_1 fill:#fca326,color:#fff; style R2_2 fill:#fca326,color:#fff
+    style R3_1 fill:#fca326,color:#fff; style R3_2 fill:#fca326,color:#fff
     style Ingress fill:#00a6ed,color:#fff
     style Vault fill:#f5d142,stroke:#333
     style Pods fill:#61dafb,stroke:#333
     style Node_DEV fill:#f9f9f9,stroke:#333,stroke-dasharray: 5 5
     style Node_RUNNER fill:#f9f9f9,stroke:#333,stroke-dasharray: 5 5
     style Node_OSNOVA fill:#f9f9f9,stroke:#333,stroke-dasharray: 5 5
+    style R_DEV fill:none,stroke:none
+    style R_RUN fill:none,stroke:none
+    style R_OSN fill:none,stroke:none
 ```
 # Go-K8s-Chat
 Современный масштабируемый чат на WebSockets с использованием Golang, Kubernetes и безопасным управлением секретами через HashiCorp Vault.
