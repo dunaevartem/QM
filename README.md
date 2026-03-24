@@ -1,21 +1,19 @@
 ```mermaid
 graph TD
-    subgraph Cluster ["Kubernetes Cluster (3 Nodes)"]
-        
-        subgraph DEV ["Node: dev"]
-            GL_Svc[GitLab Service]
-            Registry((GitLab Registry))
-            GL_Svc --- Registry
-        end
+    subgraph Server_DEV ["Standalone Server: DEV"]
+        GitLab[GitLab Service]
+        Registry((GitLab Registry))
+    end
 
-        subgraph RUNNER_SRV ["Node: runner"]
+    subgraph K8s_Cluster ["Kubernetes Cluster"]
+        subgraph Node_RUNNER ["Node: RUNNER"]
             subgraph R_NS ["Namespace: gitlab-runner"]
                 Runner[GitLab Runner Pod]
             end
             Ingress[NGINX Ingress Controller]
         end
 
-        subgraph OSNOVA ["Node: osnova"]
+        subgraph Node_OSNOVA ["Node: OSNOVA"]
             subgraph AppNS ["Namespace: chat-app"]
                 Pods[Go-Chat Pods]
                 ESO[External Secrets Operator]
@@ -23,34 +21,32 @@ graph TD
             end
             DB[(Postgres 15)]
         end
-        
     end
 
-    subgraph External ["Security"]
+    subgraph Security ["Security"]
         Vault[(HashiCorp Vault)]
     end
 
     %% Трафик пользователя
     User((User)) -->|chat.local| Ingress
-    Ingress -->|Route| Pods
+    Ingress -->|Forward| Pods
 
-    %% CI/CD Потоки внутри кластера
-    GL_Svc <-->|Jobs| Runner
+    %% CI/CD Потоки (Вне -> Внутри)
+    GitLab <-->|Jobs / API| Runner
     Runner -->|1. Build & Test| Runner
     Runner -->|2. Kaniko Push| Registry
     Runner -->|3. Helm Deploy| AppNS
 
-    %% Секреты и Данные
+    %% Работа с секретами и данными
     Vault -->|Provide Secrets| ESO
     ESO -.->|Sync| K8sSecret
     K8sSecret -.->|Inject ENV| Pods
     Pods --> DB
 
     %% Стилизация
-    style DEV fill:#f9f9f9,stroke:#333,stroke-dasharray: 5 5
-    style RUNNER_SRV fill:#f9f9f9,stroke:#333,stroke-dasharray: 5 5
-    style OSNOVA fill:#f9f9f9,stroke:#333,stroke-dasharray: 5 5
-    style GL_Svc fill:#fc6d26,color:#fff
+    style Server_DEV fill:#f1f1f1,stroke:#fc6d26,stroke-width:2px
+    style K8s_Cluster fill:#f8f9ff,stroke:#326ce5,stroke-width:2px
+    style GitLab fill:#fc6d26,color:#fff
     style Runner fill:#fca326,color:#fff
     style Ingress fill:#00a6ed,color:#fff
     style Vault fill:#f5d142,stroke:#333
