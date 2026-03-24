@@ -1,3 +1,45 @@
+mermaid
+```
+graph TD
+    subgraph "External Access"
+        User((User)) --> Ingress[NGINX Ingress: chat.local]
+    end
+
+    subgraph "Kubernetes Cluster (Namespace: chat-app)"
+        Ingress --> Service[K8s Service: Port 80]
+        
+        subgraph "Application Layer"
+            Service --> Pods[Go-Chat Pods: Gin + WebSocket]
+            ESO[External Secrets Operator] -.->|Creates| K8sSecret[K8s Secret]
+            K8sSecret -.->|Injects ENV| Pods
+        end
+
+        subgraph "Data Layer"
+            Pods --> DB[(PostgreSQL 15)]
+            DB --- PV[Persistent Volume]
+        end
+    end
+
+    subgraph "Security & Secrets"
+        Vault[(HashiCorp Vault)]
+        Vault -->|secret/chat-app| ESO
+        Vault -->|secret/registry| ESO
+    end
+
+    subgraph "CI/CD Pipeline (GitLab)"
+        Code[Git Repo] --> Build[Build: Go Binary]
+        Build --> Test[Test: Unit Tests]
+        Test --> Push[Push: Kaniko Image]
+        Push --> Deploy[Deploy: Helm Upgrade]
+        
+        Push -.-> Registry((GitLab Registry))
+        Deploy -.-> Pods
+    end
+
+    style Vault fill:#f5d142,stroke:#333,stroke-width:2px
+    style Pods fill:#61dafb,stroke:#333,stroke-width:2px
+    style DB fill:#336791,stroke:#f2f2f2,color:#fff
+```
 # Go-K8s-Chat
 Современный масштабируемый чат на WebSockets с использованием Golang, Kubernetes и безопасным управлением секретами через HashiCorp Vault.
 # Архитектура
