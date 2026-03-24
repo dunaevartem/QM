@@ -1,43 +1,50 @@
 ```mermaid
 graph TD
-    subgraph "External Access"
-        User((User)) --> Ingress[NGINX Ingress: chat.local]
-    end
-
-    subgraph "Kubernetes Cluster (Namespace: chat-app)"
-        Ingress --> Service[K8s Service: Port 80]
+    subgraph "Infrastructure: 3-Node K8s Cluster"
+        subgraph Node1 ["Node 1 (Control Plane/Worker)"]
+             Runner[GitLab Runner Pod]
+        end
         
-        subgraph "Application Layer"
-            Service --> Pods[Go-Chat Pods: Gin + WebSocket]
-            ESO[External Secrets Operator] -.->|Creates| K8sSecret[K8s Secret]
-            K8sSecret -.->|Injects ENV| Pods
+        subgraph Node2 ["Node 2 (Worker)"]
+            subgraph AppNS ["Namespace: chat-app"]
+                Pods[Go-Chat Pods]
+                ESO[External Secrets Operator]
+            end
         end
-
-        subgraph "Data Layer"
-            Pods --> DB[(PostgreSQL 15)]
-            DB --- PV[Persistent Volume]
+        
+        subgraph Node3 ["Node 3 (Worker)"]
+            DB[(PostgreSQL 15)]
+            PV[Persistent Volume]
         end
     end
 
-    subgraph "Security & Secrets"
+    subgraph "GitLab SaaS / Self-managed"
+        GitRepo[Git Repository]
+        Registry((GitLab Registry))
+    end
+
+    subgraph "Security"
         Vault[(HashiCorp Vault)]
-        Vault -->|secret/chat-app| ESO
-        Vault -->|secret/registry| ESO
     end
 
-    subgraph "CI/CD Pipeline (GitLab)"
-        Code[Git Repo] --> Build[Build: Go Binary]
-        Build --> Test[Test: Unit Tests]
-        Test --> Push[Push: Kaniko Image]
-        Push --> Deploy[Deploy: Helm Upgrade]
-        
-        Push -.-> Registry((GitLab Registry))
-        Deploy -.-> Pods
-    end
+    %% Workflow Connections
+    GitRepo <-->|Polls / Webhook| Runner
+    Runner -->|1. Build & Test| Runner
+    Runner -->|2. Kaniko Push| Registry
+    Runner -->|3. Helm Deploy| AppNS
+    
+    Vault -->|Provide Secrets| ESO
+    ESO -.->|Creates K8s Secret| Pods
+    Pods --> DB
+    
+    User((User)) -->|chat.local| Node2
 
-    style Vault fill:#f5d142,stroke:#333,stroke-width:2px
-    style Pods fill:#61dafb,stroke:#333,stroke-width:2px
-    style DB fill:#336791,stroke:#f2f2f2,color:#fff
+    %% Styling
+    style Runner fill:#fca326,stroke:#333,stroke-width:2px,color:#fff
+    style Node1 fill:#f8f9fa,stroke:#999,stroke-dasharray: 5 5
+    style Node2 fill:#f8f9fa,stroke:#999,stroke-dasharray: 5 5
+    style Node3 fill:#f8f9fa,stroke:#999,stroke-dasharray: 5 5
+    style Vault fill:#f5d142,stroke:#333
 ```
 # Go-K8s-Chat
 Современный масштабируемый чат на WebSockets с использованием Golang, Kubernetes и безопасным управлением секретами через HashiCorp Vault.
