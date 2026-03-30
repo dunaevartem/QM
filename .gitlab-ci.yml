@@ -2,7 +2,6 @@ stages:
   - build
   - test   
   - push
-  - pre-deploy
   - deploy
 
 variables:
