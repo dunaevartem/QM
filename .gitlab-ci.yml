@@ -48,6 +48,8 @@ container_scan:
     name: aquasec/trivy:latest
     entrypoint: [""]
   script:
+    - export TRIVY_USERNAME=$CI_REGISTRY_USER
+    - export TRIVY_PASSWORD=$CI_REGISTRY_PASSWORD
     # Проверяем образ и валим пайплайн, если найдены КРИТИЧЕСКИЕ уязвимости
     - trivy image --exit-code 1 --severity CRITICAL --no-progress $IMAGE_TAG
   allow_failure: false  # Если найдена дыра, выдает ошибку пайплайна и останавливает работу.
