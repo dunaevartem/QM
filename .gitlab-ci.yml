@@ -47,6 +47,12 @@ container_scan:
   image: 
     name: aquasec/trivy:latest
     entrypoint: [""]
+  variables:
+    # Указываем Trivy использовать локальную папку для кэша
+    TRIVY_CACHE_DIR: ".trivycache/"
+  cache:
+    paths:
+      - .trivycache/
   script:
     - export TRIVY_USERNAME=$CI_REGISTRY_USER
     - export TRIVY_PASSWORD=$CI_REGISTRY_PASSWORD
