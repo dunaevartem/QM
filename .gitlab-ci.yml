@@ -2,6 +2,7 @@ stages:
   - build
   - test   
   - push
+  - scan
   - deploy
 
 variables:
@@ -22,7 +23,6 @@ build_app:
     paths:
       - chat-server
 
-# --- НОВАЯ ЗАДАЧА ---
 run_tests:
   stage: test
   image: golang:1.24-alpine
@@ -41,6 +41,16 @@ push_image:
     - mkdir -p /kaniko/.docker
     - echo "{\"auths\":{\"$CI_REGISTRY\":{\"auth\":\"$(printf "%s:%s" "$CI_REGISTRY_USER" "$CI_REGISTRY_PASSWORD" | base64 | tr -d '\n')\"}}}" > /kaniko/.docker/config.json
     - /kaniko/executor --context "${CI_PROJECT_DIR}" --dockerfile "${CI_PROJECT_DIR}/Dockerfile" --destination "${IMAGE_TAG}"
+
+container_scan:
+  stage: scan
+  image: 
+    name: aquasec/trivy:latest
+    entrypoint: [""]
+  script:
+    # Проверяем образ и валим пайплайн, если найдены КРИТИЧЕСКИЕ уязвимости
+    - trivy image --exit-code 1 --severity CRITICAL --no-progress $IMAGE_TAG
+  allow_failure: false  # Если найдена дыра, выдает ошибку пайплайна и останавливает работу.
 
 deploy:
   stage: deploy
