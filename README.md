@@ -57,10 +57,12 @@ helm upgrade --install chat ./charts/chat-app \
 ```
 # Конфигурация (Values.yaml)
 
-* replicaCount	Количество подов приложения	1
-* service.port	Внутренний порт сервиса	80
-* ingress.host	Домен для доступа к чату	chat.local
-* postgres.secretName	Имя создаваемого секрета для БД	postgres-secret
+| Параметр | Описание | Значение |
+| :--- | :--- | :--- |
+| `replicaCount` | Количество подов приложения | `1` |
+| `service.port` | Внутренний порт сервиса | `80` |
+| `ingress.host` | Домен для доступа к чату | `chat.local` |
+| `postgres.secretName` | Имя секрета для подключения к БД | `postgres-secret` |
 
 # Разработка
 
