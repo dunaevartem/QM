@@ -1,4 +1,4 @@
-# Go-Chat
+## Go-Chat
 
 Современный масштабируемый чат на WebSockets, построенный на микросервисной архитектуре с использованием Golang и Kubernetes. Особое внимание уделено безопасности и автоматизации доставки (CI/CD).
 
@@ -38,7 +38,7 @@
 *   **Scan:** Глубокий аудит безопасности образа с помощью **Trivy** (блокировка при CRITICAL).
 *   **Deploy:** Автоматический деплой приложения в Kubernetes через Helm.
 
-# Развертывание (Helm)
+## Развертывание (Helm)
 __Предварительные требования__
 
 * Установленный ingress-nginx.
@@ -55,7 +55,7 @@ helm upgrade --install chat ./charts/chat-app \
   --set image.tag=latest \
   --set registry.url=$CI_REGISTRY
 ```
-# Конфигурация (Values.yaml)
+## Конфигурация (Values.yaml)
 
 | Параметр | Описание | Значение |
 | :--- | :--- | :--- |
@@ -64,7 +64,7 @@ helm upgrade --install chat ./charts/chat-app \
 | `ingress.host` | Домен для доступа к чату | `chat.local` |
 | `postgres.secretName` | Имя секрета для подключения к БД | `postgres-secret` |
 
-# Разработка
+## Разработка
 
 Для локального запуска (требуется установленный Postgres):
 ```
@@ -72,4 +72,8 @@ export DATABASE_URL="postgres://user:pass@localhost:5432/chat_db"
 go run ./cmd/main.go
 ```
 Приложение будет доступно на порту :8080.
+
+## Лицензия
+
+Данный проект распространяется под лицензией **MIT**. Подробности в файле [LICENSE](LICENSE).
 
