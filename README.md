@@ -1,35 +1,42 @@
 # Go-K8s-Chat
-Современный масштабируемый чат на WebSockets с использованием Golang, Kubernetes и безопасным управлением секретами через HashiCorp Vault.
-# Архитектура
-* Backend: Go (Gin Framework + Gorilla WebSocket).
-* Frontend: Статический HTML/JS (встроен в образ).
-* Database: PostgreSQL 15 (StatefulSet с PersistentVolume).
-* Secrets: HashiCorp Vault + External Secrets Operator.
-* CI/CD: GitLab CI (Kaniko для сборки, Helm для деплоя).
-# Технологический стек
-* Runtime: golang:1.24-alpine
-* Orchestration: Kubernetes 1.29+
-* Package Manager: Helm 3
-* Ingress: NGINX Ingress Controller (доступ по chat.local)
-# Управление секретами (Vault)
-В проекте реализован принцип Zero Secrets in Git. Все чувствительные данные (пароли БД, ключи реестра) хранятся в Vault и доставляются в кластер через ExternalSecrets.
 
-__Настройка Vault__
+Современный масштабируемый чат на WebSockets, построенный на микросервисной архитектуре с использованием Golang и Kubernetes. Особое внимание уделено безопасности и автоматизации доставки (CI/CD).
 
-Путь к секрету базы: secret/chat-app (поле password).
+## Архитектура
+*   **Backend:** Go 1.24 (Gin Framework + Gorilla WebSocket).
+*   **Frontend:** Статический HTML/JS (встроен в Docker-образ).
+*   **Database:** PostgreSQL 15 (StatefulSet с PersistentVolume для хранения данных).
+*   **Secrets:** HashiCorp Vault + External Secrets Operator (автоматическая доставка секретов в K8s).
+*   **CI/CD:** GitLab CI (Kaniko для безопасной сборки, Helm для деплоя).
 
-Путь к секрету реестра: secret/registry (поля user, password).
+## Технологический стек
+*   **Runtime:** `golang:1.24-alpine` (минимальный размер и поверхность атаки).
+*   **Orchestration:** Kubernetes 1.29+.
+*   **Package Manager:** Helm 3.
+*   **Ingress:** NGINX Ingress Controller (доступ по адресу `chat.local`).
 
-Роль в Vault: chat-app-role (привязана к ServiceAccount default).
+## Безопасность (DevSecOps)
+Проект придерживается подходов **DevSecOps** и обеспечивает защиту на всех уровнях:
 
-# CI/CD Пайплайн
-Автоматизация описана в .gitlab-ci.yml и включает 5 стадий:
+1.  **Zero Secrets in Git:** Чувствительные данные (пароли БД, ключи реестра) никогда не попадают в репозиторий.
+2.  **HashiCorp Vault:** Используется как централизованное доверенное хранилище секретов.
+3.  **Container Scanning (Trivy):** В пайплайн интегрирован сканер `aquasec/trivy`. Он проводит аудит образа на наличие CVE. Пайплайн принудительно останавливается (`exit-code 1`), если найдены уязвимости уровня **CRITICAL**.
+4.  **Rootless Build (Kaniko):** Сборка образов происходит без использования Docker-in-Docker и без привилегий root, что исключает возможность атаки на хостовую систему GitLab Runner.
+5.  **External Secrets Operator:** Автоматически синхронизирует секреты из Vault в нативные `Secret` объекты Kubernetes.
 
-* Build: Компиляция бинарного файла chat-server.
-* Test: Запуск unit-тестов из директории /test.
-* Push: Сборка Docker-образа через Kaniko (без привилегий root) и пуш в GitLab Registry.
-* Scan: 
-* Deploy: Деплой приложения в Kubernetes через Helm.
+## Настройка Vault
+*   **Путь к секрету базы:** `secret/chat-app` (поле `password`).
+*   **Путь к секрету реестра:** `secret/registry` (поля `user`, `password`).
+*   **Роль в Vault:** `chat-app-role` (привязана к ServiceAccount `default`).
+
+## CI/CD Пайплайн
+Автоматизация описана в `.gitlab-ci.yml` и включает 5 стадий:
+
+*   **Build:** Компиляция бинарного файла приложения.
+*   **Test:** Запуск unit-тестов из директории `/test`.
+*   **Push:** Сборка Docker-образа через Kaniko и пуш в GitLab Registry.
+*   **Scan:** Глубокий аудит безопасности образа с помощью **Trivy** (блокировка при CRITICAL).
+*   **Deploy:** Автоматический деплой приложения в Kubernetes через Helm.
 
 # Развертывание (Helm)
 __Предварительные требования__
