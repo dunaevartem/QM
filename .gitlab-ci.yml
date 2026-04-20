@@ -1,4 +1,5 @@
 stages:
+  - lint
   - build
   - test   
   - push
@@ -9,10 +10,31 @@ variables:
   IMAGE_TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA
   GOPATH: $CI_PROJECT_DIR/.go
   GOTOOLCHAIN: "auto"
+
 cache:
   key: ${CI_COMMIT_REF_SLUG}
   paths:
     - .go/pkg/mod/
+
+checkov_scan:
+  stage: lint
+  image: 
+    name: bridgecrew/checkov:latest
+    entrypoint: [""]
+  script:
+    # Сканируем папку с чартами. 
+    # --soft-fail позволит пайплайну пройти, если хочешь просто посмотреть ошибки.
+    # Если хочешь жестко блокировать — убери --soft-fail.
+    - checkov -d ./charts/chat-app --framework helm --quiet --soft-fail
+
+kube_score:
+  stage: lint
+  image: 
+    name: zegl/kube-score:latest
+    entrypoint: [""]
+  script:
+    # Генерируем итоговый YAML из Helm и проверяем его
+    - helm template chat ./charts/chat-app | kube-score score -
 
 build_app:
   stage: build
