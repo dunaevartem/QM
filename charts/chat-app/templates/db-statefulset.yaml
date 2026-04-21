@@ -69,17 +69,17 @@ spec:
         # --- НОВОЕ: монтируем скрипт инициализации ---
         - name: init-scripts
           mountPath: /docker-entrypoint-initdb.d
-        # ДОБАВЛЯЕМ ПУТИ ДЛЯ ЗАПИСИ
-        - name: tmp-dir
-          mountPath: /tmp
-        - name: run-dir
-          mountPath: /var/run/postgresql
       
       volumes:
       # --- НОВОЕ: связываем с ConfigMap ---
       - name: init-scripts
         configMap:
           name: postgres-init-script
+      # ДОБАВЛЯЕМ ПУТИ ДЛЯ ЗАПИСИ
+      - name: tmp-dir
+        mountPath: /tmp
+      - name: run-dir
+        mountPath: /var/run/postgresql
   
   volumeClaimTemplates:
   - metadata:
