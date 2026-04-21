@@ -22,14 +22,14 @@ spec:
         # kube-score требует явного указания PullPolicy
         imagePullPolicy: Always
         # Настройки безопасности контейнера
-        securityContext:
-          runAsNonRoot: true
-          runAsUser: 10001
-          runAsGroup: 30001
+        # securityContext:
+        #  runAsNonRoot: true
+        #  runAsUser: 10001
+        #  runAsGroup: 30001
           # Внимание: для Postgres readOnlyRootFilesystem: true 
           # может потребовать доп. настройки временных папок (/tmp, /var/run), 
           # поэтому здесь можно оставить false или настроить emptyDir
-          readOnlyRootFilesystem: false 
+        #  readOnlyRootFilesystem: false 
         env:
         - name: PGDATA
           value: /var/lib/postgresql/data/pgdata
