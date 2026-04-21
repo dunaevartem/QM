@@ -17,6 +17,18 @@ spec:
           # Добавляем сюда, чтобы K8s знал, какой ключ использовать для скачивания образа
       imagePullSecrets:
         - name: gitlab-registry-key
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - {{ .Release.Name }}
+              topologyKey: "kubernetes.io/hostname"
       containers:
         - name: chat-app
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
