@@ -29,7 +29,7 @@ spec:
           # Внимание: для Postgres readOnlyRootFilesystem: true 
           # может потребовать доп. настройки временных папок (/tmp, /var/run), 
           # поэтому здесь можно оставить false или настроить emptyDir
-          readOnlyRootFilesystem: false 
+          readOnlyRootFilesystem: true 
         env:
         - name: POSTGRES_PASSWORD
           valueFrom:
@@ -69,6 +69,11 @@ spec:
         # --- НОВОЕ: монтируем скрипт инициализации ---
         - name: init-scripts
           mountPath: /docker-entrypoint-initdb.d
+        # ДОБАВЛЯЕМ ПУТИ ДЛЯ ЗАПИСИ
+        - name: tmp-dir
+          mountPath: /tmp
+        - name: run-dir
+          mountPath: /var/run/postgresql
       
       volumes:
       # --- НОВОЕ: связываем с ConfigMap ---
