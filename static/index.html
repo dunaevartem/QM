@@ -32,6 +32,16 @@
         const messageInput = document.getElementById('message');
         const usernameInput = document.getElementById('username');
 
+        // При загрузке проверяем, есть ли имя в памяти браузера
+        const savedUsername = localStorage.getItem('chat_username');
+        if (savedUsername) {
+            usernameInput.value = savedUsername;
+        }
+
+        // Слушаем изменения в поле имени и сохраняем их
+        usernameInput.addEventListener('input', () => {
+            localStorage.setItem('chat_username', usernameInput.value);
+        });
         // Функция отрисовки сообщения в UI
         function renderMessage(data) {
             const msgDiv = document.createElement('div');
