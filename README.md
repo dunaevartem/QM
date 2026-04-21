@@ -59,7 +59,7 @@ helm upgrade --install chat ./charts/chat-app \
 
 | Параметр | Описание | Значение |
 | :--- | :--- | :--- |
-| `replicaCount` | Количество подов приложения | `1` |
+| `replicaCount` | Количество подов приложения | `2` |
 | `service.port` | Внутренний порт сервиса | `80` |
 | `ingress.host` | Домен для доступа к чату | `chat.local` |
 | `postgres.secretName` | Имя секрета для подключения к БД | `postgres-secret` |
