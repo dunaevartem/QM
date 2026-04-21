@@ -19,7 +19,13 @@ spec:
         - name: gitlab-registry-key
       containers:
         - name: chat-app
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default "latest" }}"
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+        #  image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default "latest" }}"
+          securityContext:
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 3000
           imagePullPolicy: {{ .Values.image.pullPolicy | default "Always" }}
           ports:
             - containerPort: 8080
@@ -44,10 +50,19 @@ spec:
             initialDelaySeconds: 10
             periodSeconds: 5
           
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          
           resources:
             limits:
               cpu: 200m
               memory: 256Mi
+              ephemeral-storage: "1Gi"
             requests:
               cpu: 100m
               memory: 128Mi
+              ephemeral-storage: "50Mi"
