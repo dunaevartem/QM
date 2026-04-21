@@ -1,0 +1,11 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Release.Name }}-netpol
+spec:
+  podSelector: {} # Применяем ко всем подам в этом чарте
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector: {} # Разрешаем общение между всеми подами внутри чарта
