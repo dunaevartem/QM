@@ -37,6 +37,7 @@ kube_score:
     - >
       helm template chat ./charts/chat-app 
       --set registry.url=$CI_REGISTRY 
+      --set image.tag=$CI_COMMIT_SHORT_SHA
       | kube-score score -
 
 build_app:
