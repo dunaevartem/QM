@@ -31,6 +31,8 @@ spec:
           # поэтому здесь можно оставить false или настроить emptyDir
           readOnlyRootFilesystem: true 
         env:
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
         - name: POSTGRES_PASSWORD
           valueFrom:
             secretKeyRef:
