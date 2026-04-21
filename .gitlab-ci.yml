@@ -34,7 +34,10 @@ kube_score:
     entrypoint: [""]
   script:
     # Генерируем итоговый YAML из Helm и проверяем его
-    - helm template chat ./charts/chat-app | kube-score score -
+    - >
+      helm template chat ./charts/chat-app 
+      --set registry.url=$CI_REGISTRY 
+      | kube-score score -
 
 build_app:
   stage: build
