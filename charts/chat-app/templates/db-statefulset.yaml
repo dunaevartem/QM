@@ -13,9 +13,23 @@ spec:
       labels:
         app: postgres
     spec:
+      # Рекомендуется для безопасности запускать от не-root пользователя
+      securityContext:
+        fsGroup: 30001
       containers:
       - name: postgres
         image: postgres:15-alpine
+        # kube-score требует явного указания PullPolicy
+        imagePullPolicy: Always
+        # Настройки безопасности контейнера
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 10001
+          runAsGroup: 30001
+          # Внимание: для Postgres readOnlyRootFilesystem: true 
+          # может потребовать доп. настройки временных папок (/tmp, /var/run), 
+          # поэтому здесь можно оставить false или настроить emptyDir
+          readOnlyRootFilesystem: false 
         env:
         - name: POSTGRES_PASSWORD
           valueFrom:
@@ -26,6 +40,29 @@ spec:
           value: "chat_db"
         ports:
         - containerPort: 5432
+
+        readinessProbe:
+          exec:
+            command:
+              - pg_isready
+              - -U
+              - postgres
+              - -d
+              - chat_db
+          initialDelaySeconds: 10
+          periodSeconds: 10
+
+        # Обязательные ресурсы, включая Ephemeral Storage
+        resources:
+          requests:
+            cpu: 200m
+            memory: 256Mi
+            ephemeral-storage: "100Mi"
+          limits:
+            cpu: 500m
+            memory: 512Mi
+            ephemeral-storage: "1Gi"
+
         volumeMounts:
         - name: db-data
           mountPath: /var/lib/postgresql/data
