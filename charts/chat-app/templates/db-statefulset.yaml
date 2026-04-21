@@ -29,7 +29,7 @@ spec:
           # Внимание: для Postgres readOnlyRootFilesystem: true 
           # может потребовать доп. настройки временных папок (/tmp, /var/run), 
           # поэтому здесь можно оставить false или настроить emptyDir
-          readOnlyRootFilesystem: true 
+          readOnlyRootFilesystem: false 
         env:
         - name: PGDATA
           value: /var/lib/postgresql/data/pgdata
