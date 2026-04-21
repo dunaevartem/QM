@@ -57,7 +57,7 @@ spec:
           # Проверка, что приложение живое
           livenessProbe:
             httpGet:
-              path: /
+              path: /healthz
               port: 8080
               httpHeaders:
                 - name: X-Probe-Type
