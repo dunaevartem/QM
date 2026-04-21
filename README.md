@@ -71,7 +71,7 @@ helm upgrade --install chat ./charts/chat-app \
 export DATABASE_URL="postgres://user:pass@localhost:5432/chat_db"
 go run ./cmd/main.go
 ```
-Приложение будет доступно прописав в браузере chat.local
+Приложение будет доступно на порту :8080.
 
 ## Лицензия
 
