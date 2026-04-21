@@ -48,14 +48,14 @@ spec:
               path: /
               port: 8080
             initialDelaySeconds: 15
-            periodSeconds: 10
+            periodSeconds: 20
           
           readinessProbe:
             httpGet:
               path: /
               port: 8080
-            initialDelaySeconds: 10
-            periodSeconds: 5
+            initialDelaySeconds: 5
+            periodSeconds: 10
           
           resources:
             limits:
